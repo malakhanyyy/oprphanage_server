@@ -7,10 +7,35 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. CONNECT TO DATABASE
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('✅ Connected to Database'))
-    .catch(err => console.error('❌ Database connection error:', err));
+// --- SERVERLESS DATABASE CONNECTION LOGIC ---
+let isConnected = false;
+
+const connectDB = async () => {
+    if (isConnected) {
+        return; 
+    }
+    try {
+        const db = await mongoose.connect(process.env.MONGODB_URI, {
+            serverSelectionTimeoutMS: 5000 
+        });
+        isConnected = db.connections[0].readyState;
+        console.log('✅ Connected to MongoDB Atlas');
+    } catch (err) {
+        console.error('❌ Database connection error:', err);
+        throw err;
+    }
+};
+
+// Checkpoint: Ensure database is awake BEFORE running any routes
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        return res.status(500).json({ error: "Database connection failed. Check your MONGODB_URI." });
+    }
+});
+// --------------------------------------------------
 
 // 2. DEFINE DATABASE SCHEMA
 const userSchema = new mongoose.Schema({
@@ -113,7 +138,7 @@ Determine if it contains passive/active suicidal ideation, depression, hopelessn
 
         const data = await response.json();
         let outputText = data.choices[0].message.content;
-
+        
         const jsonMatch = outputText.match(/\{[\s\S]*\}/);
         if (jsonMatch) outputText = jsonMatch[0];
 
