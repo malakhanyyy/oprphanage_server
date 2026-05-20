@@ -12,11 +12,11 @@ let isConnected = false;
 
 const connectDB = async () => {
     if (isConnected) {
-        return; 
+        return;
     }
     try {
         const db = await mongoose.connect(process.env.MONGODB_URI, {
-            serverSelectionTimeoutMS: 5000 
+            serverSelectionTimeoutMS: 5000
         });
         isConnected = db.connections[0].readyState;
         console.log('✅ Connected to MongoDB Atlas');
@@ -138,7 +138,7 @@ Determine if it contains passive/active suicidal ideation, depression, hopelessn
 
         const data = await response.json();
         let outputText = data.choices[0].message.content;
-        
+
         const jsonMatch = outputText.match(/\{[\s\S]*\}/);
         if (jsonMatch) outputText = jsonMatch[0];
 
